@@ -16,5 +16,5 @@ This project is a simple interpreter for a custom programming language called "B
 To run this project, you need Python installed on your machine. Clone the repository and navigate to the project directory:
 
 ```bash
-git clone github.com/Armaan-Khehra/Syntho
+git clone https://github.com/Armaan-Khehra/Syntho
 cd Syntho
