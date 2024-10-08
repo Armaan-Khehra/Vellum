@@ -3,7 +3,7 @@
 ## Basic Language Interpreter
 
 ### Overview
-This project is a simple interpreter for a custom programming language called "Basic". The interpreter is implemented in Python and includes a lexer that tokenizes input strings, error handling, and the capability to parse basic mathematical expressions.
+This project is a simple interpreter for a custom programming language called "Syntho". The interpreter is implemented in Python and includes a lexer that tokenizes input strings, error handling, and the capability to parse basic mathematical expressions.
 
 ### Features
 - **Tokenization**: Converts input strings into a sequence of tokens.
