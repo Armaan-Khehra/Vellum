@@ -21,7 +21,7 @@ class IllegalCharError(Error):
     def __init__(self, pos_start, pos_end, details) -> None:
         super().__init__(pos_start, pos_end, 'Illegal Character', details)
 
-class IllegalCharError(Error):
+class InvalidSyntaxError(Error):
     def __init__(self, pos_start, pos_end, details) -> None:
         super().__init__(pos_start, pos_end, 'Invalid Syntax', details)
 
@@ -198,12 +198,20 @@ class Parser:
         res = self.expr()
         return res
     
+    ################################
+    
     def factor(self):
+        res = ParseResult()
         tok = self.current_tok
 
         if tok.type in (TT_INT, TT_FLOAT):
-            self.advance()
-            return NumberNode(tok)
+            res.register(self.advance())
+            return res.success(NumberNode(tok))
+        
+        return res.failure(InvalidSyntaxError(
+            tok.pos_start, tok.pos_end,
+            "Expected int or float"
+        ))
 
     def term(self):
         return self.bin_op(self.factor, (TT_MUL, TT_DIV))
