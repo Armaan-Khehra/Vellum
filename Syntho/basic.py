@@ -59,9 +59,17 @@ TT_LPAREN   = 'LPAREN'
 TT_RPAREN   = 'RPAREN'
 
 class Token:
-    def __init__(self, type_, value=None):
+    def __init__(self, type_, value=None, pos_start=None, pos_end=None):
         self.type = type_
         self.value = value
+ 
+        if pos_start:
+            self.pos_start = pos_start.copy()
+            self.pos_end = pos_start.copy()
+            self.pos_end.advance()
+
+        if pos_end:
+            self.pos_end = pos_end
 
     def __repr__(self):
         if self.value: return f'{self.type}:{self.value}'
@@ -150,6 +158,27 @@ class BinOpNode:
     
     def __repr__(self) -> str:
         return f'({self.left_node}, {self.op_tok}, {self.right_node})'
+
+#PARSE RESULT
+
+class ParseResult:
+    def __init__(self) -> None:
+        self.error = None
+        self.node = None
+
+    def register(self, res):
+        if isinstance(res, ParseResult()):
+            if res.error: self.error = res.error
+            return res.node
+        return res
+    
+    def success(self, node):
+        self.none = node
+        return self
+
+    def failure(self, error):
+        self.error = error
+        return self
     
 #PARSER
 
@@ -159,7 +188,7 @@ class Parser:
         self.tok_idx = 1
         self.advance()
 
-    def advance():
+    def advance(self):
         self.tok_idx += 1
         if self.tok_idx < len(self.tokens):
             self.current_tok = self.tokens[self.tok_idx]
