@@ -17,3 +17,23 @@
 2. Navigate to the project directory:
     ```bash
    cd syntho
+3. Make sure you have Python installed (Python 3.x is recommended).
+
+##How to Use
+
+To run a Syntho program, use the run() function. This function takes two arguments: a filename (for reference in error messages) and a string containing the expression to evaluate.
+
+###Example
+```python
+from syntho import run
+
+result, error = run('<stdin>', '3 + 4 * (2 - 1)')
+
+if error:
+    print(error.as_string())
+else:
+    print(result)
+
+This will output:
+```
+7
