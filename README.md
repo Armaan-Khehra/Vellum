@@ -17,13 +17,14 @@
 2. Navigate to the project directory:
     ```bash
    cd syntho
+    ```
 3. Make sure you have Python installed (Python 3.x is recommended).
 
 ##How to Use
 
 To run a Syntho program, use the run() function. This function takes two arguments: a filename (for reference in error messages) and a string containing the expression to evaluate.
 
-###Example
+## Example
 ```python
 from syntho import run
 
@@ -33,7 +34,19 @@ if error:
     print(error.as_string())
 else:
     print(result)
-
+```
 This will output:
 ```
 7
+```
+
+## Error Handling
+
+- Invalid Syntax: When the user enters an incorrect expression, Syntho will detect the syntax error and provide an informative message indicating the location of the problem.
+- Illegal Characters: If unsupported characters are encountered, Syntho will raise an Illegal Character error, providing details about the location and character in question.
+- Runtime Errors: Issues such as division by zero will be caught and reported as runtime errors.
+
+## File Structure
+
+- syntho.py: The main interpreter that includes the lexer, parser, interpreter, and error handling.
+- strings_with_arrows.py: Utility file to enhance error message readability by pointing to the position of the error in the input.
