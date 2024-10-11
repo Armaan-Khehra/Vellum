@@ -13,7 +13,7 @@
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/<your-username>/syntho.git
+   git clone https://github.com/armaan-khehra/syntho.git
 2. Navigate to the project directory:
     ```bash
    cd syntho
