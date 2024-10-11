@@ -1,20 +1,19 @@
 # Syntho
 
-## Basic Language Interpreter
+**Syntho** is a simple interpreted language designed to evaluate mathematical expressions. It supports fundamental arithmetic operations such as addition, subtraction, multiplication, division, and exponentiation.
 
-### Overview
-This project is a simple interpreter for a custom programming language called "Syntho". The interpreter is implemented in Python and includes a lexer that tokenizes input strings, error handling, and the capability to parse basic mathematical expressions.
+## Features
 
-### Features
-- **Tokenization**: Converts input strings into a sequence of tokens.
-- **Error Handling**: Detects and reports errors in the input, including illegal characters and provides line/column information.
-- **Mathematical Operations**: Supports basic arithmetic operations: addition, subtraction, multiplication, and division.
-- **Parentheses**: Allows grouping of expressions using parentheses.
-- **Interactive Shell**: Provides a command-line interface for user interaction.
+- **Basic Arithmetic Operations**: Syntho can handle addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`), and exponentiation (`^`).
+- **Number Types**: Supports both integers and floating-point numbers.
+- **Parentheses Support**: You can use parentheses to group expressions and control the order of operations.
+- **Error Handling**: The language provides clear error messages for issues like invalid syntax, illegal characters, and division by zero.
 
-### Installation
-To run this project, you need Python installed on your machine. Clone the repository and navigate to the project directory:
+## Installation
 
-```bash
-git clone https://github.com/Armaan-Khehra/Syntho
-cd Syntho
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/<your-username>/syntho.git
+2. Navigate to the project directory:
+    '''bash
+   cd syntho
