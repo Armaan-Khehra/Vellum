@@ -1,18 +1,12 @@
-#######################################
 # IMPORTS
-#######################################
 
 from strings_with_arrows import *
 
-#######################################
 # CONSTANTS
-#######################################
 
 DIGITS = '0123456789'
 
-#######################################
 # ERRORS
-#######################################
 
 class Error:
 	def __init__(self, pos_start, pos_end, error_name, details):
@@ -58,9 +52,7 @@ class RTError(Error):
 
 		return 'Traceback (most recent call last):\n' + result
 
-#######################################
 # POSITION
-#######################################
 
 class Position:
 	def __init__(self, idx, ln, col, fn, ftxt):
@@ -115,9 +107,7 @@ class Token:
 		if self.value: return f'{self.type}:{self.value}'
 		return f'{self.type}'
 
-#######################################
 # LEXER
-#######################################
 
 class Lexer:
 	def __init__(self, fn, text):
@@ -188,9 +178,7 @@ class Lexer:
 		else:
 			return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
 
-#######################################
 # NODES
-#######################################
 
 class NumberNode:
 	def __init__(self, tok):
@@ -225,9 +213,7 @@ class UnaryOpNode:
 	def __repr__(self):
 		return f'({self.op_tok}, {self.node})'
 
-#######################################
 # PARSE RESULT
-#######################################
 
 class ParseResult:
 	def __init__(self):
@@ -249,9 +235,7 @@ class ParseResult:
 		self.error = error
 		return self
 
-#######################################
 # PARSER
-#######################################
 
 class Parser:
 	def __init__(self, tokens):
@@ -342,9 +326,7 @@ class Parser:
 
 		return res.success(left)
 
-#######################################
 # RUNTIME RESULT
-#######################################
 
 class RTResult:
 	def __init__(self):
@@ -363,9 +345,7 @@ class RTResult:
 		self.error = error
 		return self
 
-#######################################
 # VALUES
-#######################################
 
 class Number:
 	def __init__(self, value):
@@ -412,9 +392,7 @@ class Number:
 	def __repr__(self):
 		return str(self.value)
 
-#######################################
 # CONTEXT
-#######################################
 
 class Context:
 	def __init__(self, display_name, parent=None, parent_entry_pos=None):
@@ -422,9 +400,7 @@ class Context:
 		self.parent = parent
 		self.parent_entry_pos = parent_entry_pos
 
-#######################################
 # INTERPRETER
-#######################################
 
 class Interpreter:
 	def visit(self, node, context):
@@ -480,9 +456,7 @@ class Interpreter:
 		else:
 			return res.success(number.set_pos(node.pos_start, node.pos_end))
 
-#######################################
 # RUN
-#######################################
 
 def run(fn, text):
 	# Generate tokens
