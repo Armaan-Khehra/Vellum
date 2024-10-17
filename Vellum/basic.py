@@ -103,7 +103,7 @@ TT_RPAREN   	= 'RPAREN'
 TT_EOF				= 'EOF'
 
 KEYWORDS = [
-	'VAR'
+	'hold'
 ]
 
 class Token:
@@ -367,7 +367,7 @@ class Parser:
 	def expr(self):
 		res = ParseResult()
 
-		if self.current_tok.matches(TT_KEYWORD, 'VAR'):
+		if self.current_tok.matches(TT_KEYWORD, 'hold'):
 			res.register_advancement()
 			self.advance()
 
@@ -398,7 +398,7 @@ class Parser:
 		if res.error:
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'VAR', int, float, identifier, '+', '-' or '('"
+				"Expected 'hold', int, float, identifier, '+', '-' or '('"
 			))
 
 		return res.success(node)
