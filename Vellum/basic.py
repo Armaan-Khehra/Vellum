@@ -1,12 +1,4 @@
-"""
-This module defines the core classes and functions for the Vellum programming language, including the Lexer, Parser, Interpreter, and various data types and error handling.
-
-The `Lexer` class is responsible for converting the input text into a sequence of tokens, which are then used by the `Parser` to construct an abstract syntax tree (AST) representation of the program. The `Interpreter` class then traverses the AST and executes the program, producing a result or raising any runtime errors.
-
-The module also defines several custom data types, such as `Number` and `SymbolTable`, as well as various error classes for handling different types of errors that can occur during the execution of a Vellum program.
-"""
 # IMPORTS
-
 from strings_with_arrows import *
 
 import string
@@ -88,7 +80,7 @@ class Position:
 
 # TOKENS
 
-TT_INT				= 'INT'
+TT_INT			= 'INT'
 TT_FLOAT    	= 'FLOAT'
 TT_IDENTIFIER	= 'IDENTIFIER'
 TT_KEYWORD		= 'KEYWORD'
@@ -96,14 +88,15 @@ TT_PLUS     	= 'PLUS'
 TT_MINUS    	= 'MINUS'
 TT_MUL      	= 'MUL'
 TT_DIV      	= 'DIV'
-TT_POW				= 'POW'
-TT_EQ					= 'EQ'
+TT_POW			= 'POW'
+TT_EQ			= 'EQ'
 TT_LPAREN   	= 'LPAREN'
 TT_RPAREN   	= 'RPAREN'
-TT_EOF				= 'EOF'
+TT_EOF			= 'EOF'
 
 KEYWORDS = [
-	'hold'
+	'hold',
+	'store'
 ]
 
 class Token:
@@ -238,6 +231,16 @@ class VarAssignNode:
 		self.pos_start = self.var_name_tok.pos_start
 		self.pos_end = self.value_node.pos_end
 
+	def __repr__(self):
+		return f'({self.var_name_tok}, {self.value_node})'
+
+class ConstAssignNode:
+    def __init__(self, var_name_tok, value_node):
+        self.var_name_tok = var_name_tok
+        self.value_node = value_node
+        self.pos_start = var_name_tok.pos_start  # Assuming var_name_tok has pos_start
+        self.pos_end = value_node.pos_end if value_node else var_name_tok.pos_end  # Set pos_end based on value_node or var_name_tok
+
 class BinOpNode:
 	def __init__(self, left_node, op_tok, right_node):
 		self.left_node = left_node
@@ -289,139 +292,168 @@ class ParseResult:
 # PARSER
 
 class Parser:
-	def __init__(self, tokens):
-		self.tokens = tokens
-		self.tok_idx = -1
-		self.advance()
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.tok_idx = -1
+        self.advance()
 
-	def advance(self, ):
-		self.tok_idx += 1
-		if self.tok_idx < len(self.tokens):
-			self.current_tok = self.tokens[self.tok_idx]
-		return self.current_tok
+    def advance(self):
+        self.tok_idx += 1
+        if self.tok_idx < len(self.tokens):
+            self.current_tok = self.tokens[self.tok_idx]
+        return self.current_tok
 
-	def parse(self):
-		res = self.expr()
-		if not res.error and self.current_tok.type != TT_EOF:
-			return res.failure(InvalidSyntaxError(
-				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected '+', '-', '*', '/' or '^'"
-			))
-		return res
+    def parse(self):
+        res = self.expr()
+        if not res.error and self.current_tok.type != TT_EOF:
+            return res.failure(InvalidSyntaxError(
+                self.current_tok.pos_start, self.current_tok.pos_end,
+                "Expected '+', '-', '*', '/' or '^'"
+            ))
+        return res
 
-	###################################
+    ###################################
 
-	def atom(self):
-		res = ParseResult()
-		tok = self.current_tok
+    def atom(self):
+        res = ParseResult()
+        tok = self.current_tok
 
-		if tok.type in (TT_INT, TT_FLOAT):
-			res.register_advancement()
-			self.advance()
-			return res.success(NumberNode(tok))
+        if tok.type in (TT_INT, TT_FLOAT):
+            res.register_advancement()
+            self.advance()
+            return res.success(NumberNode(tok))
 
-		elif tok.type == TT_IDENTIFIER:
-			res.register_advancement()
-			self.advance()
-			return res.success(VarAccessNode(tok))
+        elif tok.type == TT_IDENTIFIER:
+            res.register_advancement()
+            self.advance()
+            return res.success(VarAccessNode(tok))
 
-		elif tok.type == TT_LPAREN:
-			res.register_advancement()
-			self.advance()
-			expr = res.register(self.expr())
-			if res.error: return res
-			if self.current_tok.type == TT_RPAREN:
-				res.register_advancement()
-				self.advance()
-				return res.success(expr)
-			else:
-				return res.failure(InvalidSyntaxError(
-					self.current_tok.pos_start, self.current_tok.pos_end,
-					"Expected ')'"
-				))
+        elif tok.type == TT_LPAREN:
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error: return res
+            if self.current_tok.type == TT_RPAREN:
+                res.register_advancement()
+                self.advance()
+                return res.success(expr)
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_tok.pos_start, self.current_tok.pos_end,
+                    "Expected ')'"
+                ))
 
-		return res.failure(InvalidSyntaxError(
-			tok.pos_start, tok.pos_end,
-			"Expected int, float, identifier, '+', '-' or '('"
-		))
+        return res.failure(InvalidSyntaxError(
+            tok.pos_start, tok.pos_end,
+            "Expected int, float, identifier, '+', '-' or '('"
+        ))
 
-	def power(self):
-		return self.bin_op(self.atom, (TT_POW, ), self.factor)
+    def power(self):
+        return self.bin_op(self.atom, (TT_POW,), self.factor)
 
-	def factor(self):
-		res = ParseResult()
-		tok = self.current_tok
+    def factor(self):
+        res = ParseResult()
+        tok = self.current_tok
 
-		if tok.type in (TT_PLUS, TT_MINUS):
-			res.register_advancement()
-			self.advance()
-			factor = res.register(self.factor())
-			if res.error: return res
-			return res.success(UnaryOpNode(tok, factor))
+        if tok.type in (TT_PLUS, TT_MINUS):
+            res.register_advancement()
+            self.advance()
+            factor = res.register(self.factor())
+            if res.error: return res
+            return res.success(UnaryOpNode(tok, factor))
 
-		return self.power()
+        return self.power()
 
-	def term(self):
-		return self.bin_op(self.factor, (TT_MUL, TT_DIV))
+    def term(self):
+        return self.bin_op(self.factor, (TT_MUL, TT_DIV))
 
-	def expr(self):
-		res = ParseResult()
+    def expr(self):
+        res = ParseResult()
 
-		if self.current_tok.matches(TT_KEYWORD, 'hold'):
-			res.register_advancement()
-			self.advance()
+        if self.current_tok.matches(TT_KEYWORD, 'hold'):
+            res.register_advancement()
+            self.advance()
 
-			if self.current_tok.type != TT_IDENTIFIER:
-				return res.failure(InvalidSyntaxError(
+            if self.current_tok.type != TT_IDENTIFIER:
+                return res.failure(InvalidSyntaxError(
 					self.current_tok.pos_start, self.current_tok.pos_end,
 					"Expected identifier"
 				))
 
-			var_name = self.current_tok
-			res.register_advancement()
-			self.advance()
+            var_name = self.current_tok
+            res.register_advancement()
+            self.advance()
 
-			if self.current_tok.type != TT_EQ:
-				return res.failure(InvalidSyntaxError(
+            if self.current_tok.type != TT_EQ:
+                return res.failure(InvalidSyntaxError(
 					self.current_tok.pos_start, self.current_tok.pos_end,
 					"Expected '='"
 				))
 
-			res.register_advancement()
-			self.advance()
-			expr = res.register(self.expr())
-			if res.error: return res
-			return res.success(VarAssignNode(var_name, expr))
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error: return res
+            return res.success(VarAssignNode(var_name, expr))
 
-		node = res.register(self.bin_op(self.term, (TT_PLUS, TT_MINUS)))
+        elif self.current_tok.matches(TT_KEYWORD, 'store'):
+            res.register_advancement()
+            self.advance()
 
-		if res.error:
-			return res.failure(InvalidSyntaxError(
+            if self.current_tok.type != TT_IDENTIFIER:
+                return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected identifier"
+				))
+
+            var_name = self.current_tok
+            res.register_advancement()
+            self.advance()
+
+            if self.current_tok.type != TT_EQ:
+                return res.failure(InvalidSyntaxError(
+					self.current_tok.pos_start, self.current_tok.pos_end,
+					"Expected '='"
+				))
+
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error: return res
+
+			# Create a ConstAssignNode instead of VarAssignNode
+            return res.success(ConstAssignNode(var_name, expr))
+
+        node = res.register(self.bin_op(self.term, (TT_PLUS, TT_MINUS)))
+
+        if res.error:
+            return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'hold', int, float, identifier, '+', '-' or '('"
+				"Expected a variable ('hold', 'store'), int, float, identifier, '+', '-' or '('"
 			))
 
-		return res.success(node)
+        return res.success(node)
 
-	###################################
 
-	def bin_op(self, func_a, ops, func_b=None):
-		if func_b == None:
-			func_b = func_a
-		
-		res = ParseResult()
-		left = res.register(func_a())
-		if res.error: return res
+    ###################################
 
-		while self.current_tok.type in ops:
-			op_tok = self.current_tok
-			res.register_advancement()
-			self.advance()
-			right = res.register(func_b())
-			if res.error: return res
-			left = BinOpNode(left, op_tok, right)
+    def bin_op(self, func_a, ops, func_b=None):
+        if func_b is None:
+            func_b = func_a
+        
+        res = ParseResult()
+        left = res.register(func_a())
+        if res.error: return res
 
-		return res.success(left)
+        while self.current_tok.type in ops:
+            op_tok = self.current_tok
+            res.register_advancement()
+            self.advance()
+            right = res.register(func_b())
+            if res.error: return res
+            left = BinOpNode(left, op_tok, right)
+
+        return res.success(left)
 
 # RUNTIME RESULT
 
@@ -443,57 +475,56 @@ class RTResult:
 		return self
 
 # VALUES
-
 class Number:
-	def __init__(self, value):
-		self.value = value
-		self.set_pos()
-		self.set_context()
+    def __init__(self, value, is_constant=False):
+        self.value = value
+        self.is_constant = is_constant  # Add the is_constant attribute
+        self.set_pos()
+        self.set_context()
 
-	def set_pos(self, pos_start=None, pos_end=None):
-		self.pos_start = pos_start
-		self.pos_end = pos_end
-		return self
+    def set_pos(self, pos_start=None, pos_end=None):
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+        return self
 
-	def set_context(self, context=None):
-		self.context = context
-		return self
+    def set_context(self, context=None):
+        self.context = context
+        return self
 
-	def added_to(self, other):
-		if isinstance(other, Number):
-			return Number(self.value + other.value).set_context(self.context), None
+    def added_to(self, other):
+        if isinstance(other, Number):
+            return Number(self.value + other.value).set_context(self.context), None
 
-	def subbed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value - other.value).set_context(self.context), None
+    def subbed_by(self, other):
+        if isinstance(other, Number):
+            return Number(self.value - other.value).set_context(self.context), None
 
-	def multed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value * other.value).set_context(self.context), None
+    def multed_by(self, other):
+        if isinstance(other, Number):
+            return Number(self.value * other.value).set_context(self.context), None
 
-	def dived_by(self, other):
-		if isinstance(other, Number):
-			if other.value == 0:
-				return None, RTError(
-					other.pos_start, other.pos_end,
-					'Division by zero',
-					self.context
-				)
+    def dived_by(self, other):
+        if isinstance(other, Number):
+            if other.value == 0:
+                return None, RTError(
+                    other.pos_start, other.pos_end,
+                    'Division by zero',
+                    self.context
+                )
+            return Number(self.value / other.value).set_context(self.context), None
 
-			return Number(self.value / other.value).set_context(self.context), None
+    def powed_by(self, other):
+        if isinstance(other, Number):
+            return Number(self.value ** other.value).set_context(self.context), None
 
-	def powed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value ** other.value).set_context(self.context), None
+    def copy(self):
+        copy = Number(self.value, self.is_constant)  # Copy is_constant value
+        copy.set_pos(self.pos_start, self.pos_end)
+        copy.set_context(self.context)
+        return copy
 
-	def copy(self):
-		copy = Number(self.value)
-		copy.set_pos(self.pos_start, self.pos_end)
-		copy.set_context(self.context)
-		return copy
-	
-	def __repr__(self):
-		return str(self.value)
+    def __repr__(self):
+        return str(self.value)
 
 # CONTEXT
 
@@ -505,23 +536,48 @@ class Context:
 		self.symbol_table = None
 
 # SYMBOL TABLE
-
 class SymbolTable:
-	def __init__(self):
-		self.symbols = {}
-		self.parent = None
+    def __init__(self):
+        self.symbols = {}
+        self.parent = None
 
-	def get(self, name):
-		value = self.symbols.get(name, None)
-		if value == None and self.parent:
-			return self.parent.get(name)
-		return value
+    def get(self, name):
+        entry = self.symbols.get(name, None)
+        if entry is None and self.parent:
+            return self.parent.get(name)
+        return entry  # Entry should be a SymbolValue
 
-	def set(self, name, value):
-		self.symbols[name] = value
+    def set(self, name, value, is_constant=False):
+        # Ensure value is of type Number
+        if not isinstance(value, Number):
+            value = Number(value)  # Wrap in a Number if it's not already
 
-	def remove(self, name):
-		del self.symbols[name]
+        # Check if the variable already exists and if it's constant
+        existing_entry = self.symbols.get(name)
+        if existing_entry and existing_entry.is_constant:
+            raise Exception(f"Cannot reassign to constant '{name}'")
+
+        # Store the value as a SymbolValue
+        self.symbols[name] = SymbolValue(value, is_constant)
+
+    def remove(self, name):
+        if name in self.symbols:
+            del self.symbols[name]
+
+class SymbolValue:
+    def __init__(self, value, is_constant=False):
+        self.value = value
+        self.is_constant = is_constant
+
+    def copy(self):
+        return SymbolValue(self.value, self.is_constant)
+
+    def get_value(self):
+        if isinstance(self.value, Number):
+            return self.value
+        else:
+            return Number(self.value)  # Ensure it returns a Number instance
+
 
 # INTERPRETER
 
@@ -540,21 +596,23 @@ class Interpreter:
 		return RTResult().success(
 			Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
 		)
-
 	def visit_VarAccessNode(self, node, context):
 		res = RTResult()
 		var_name = node.var_name_tok.value
-		value = context.symbol_table.get(var_name)
+		entry = context.symbol_table.get(var_name)
 
-		if not value:
+		if not entry:
 			return res.failure(RTError(
 				node.pos_start, node.pos_end,
 				f"'{var_name}' is not defined",
 				context
 			))
 
-		value = value.copy().set_pos(node.pos_start, node.pos_end)
-		return res.success(value)
+		# Get the actual value from SymbolValue using the get_value method
+		value = entry.get_value()
+
+		# Return the copied value with its position set
+		return res.success(value.copy().set_pos(node.pos_start, node.pos_end))
 
 	def visit_VarAssignNode(self, node, context):
 		res = RTResult()
@@ -562,7 +620,37 @@ class Interpreter:
 		value = res.register(self.visit(node.value_node, context))
 		if res.error: return res
 
+		# Check if variable is a constant
+		existing_value = context.symbol_table.get(var_name)
+		if existing_value and existing_value.is_constant:
+			return res.failure(RTError(
+				node.pos_start, node.pos_end,
+				f"Cannot reassign to constant variable '{var_name}'",
+				context
+			))
+
 		context.symbol_table.set(var_name, value)
+		return res.success(value)
+	
+	def visit_ConstAssignNode(self, node, context):
+		res = RTResult()
+		var_name = node.var_name_tok.value
+		value = res.register(self.visit(node.value_node, context))
+		if res.error: return res
+
+		# Check if the constant is already defined in the symbol table
+		existing_value = context.symbol_table.get(var_name)
+		if existing_value:
+			# If it exists and is marked as constant, raise an error
+			if existing_value.is_constant:
+				return res.failure(RTError(
+					node.pos_start, node.pos_end,
+					f"Cannot reassign constant '{var_name}'",
+					context
+				))
+
+		# Store the constant in the symbol table
+		context.symbol_table.set(var_name, value, is_constant=True)
 		return res.success(value)
 
 	def visit_BinOpNode(self, node, context):
